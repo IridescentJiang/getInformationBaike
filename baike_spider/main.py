@@ -1,5 +1,5 @@
 # coding=utf-8
-#!/usr/bin/python
+# !/usr/bin/python
 
 from baike_spider import url_manager, html_download, html_parser, html_outputer
 
@@ -19,37 +19,30 @@ class SpiderMain(object):
         self.outputer = html_outputer.HtmlOutputer()
 
     # 爬虫的调度程序
-    def craw(self, root_url):
-        count = 1
-        self.urls.add_new_url(root_url)
+    def craw(self, root_url, params):
 
-        while self.urls.has_new_url():
-            try:
-                # 获取待爬取的 URL
-                new_url = self.urls.get_new_url()
-                print("craw %d : %s" % (count, new_url))
+        # 获取待爬取的 URL
+        new_url = root_url
 
-                html_content = self.downloader.downloader(new_url)
-                if html_content is None:
-                    print("html_content None")
-                new_urls, new_data = self.parser.parse(new_url, html_content)
-                self.urls.add_new_urls(new_urls)
-                self.outputer.collect_data(new_data)
+        for param in params:
+            html_content = self.downloader.downloader(new_url, param)
+            if html_content is None:
+                print("html_content None")
+            new_data = {"search": param}
+            new_data = self.parser.parse(new_url, html_content, new_data)
+            self.outputer.collect_data(new_data)
 
-                # 只爬取 100 条的数据
-                if(count == 1000):
-                    break
+        self.outputer.output_excel()
 
-                count = count + 1
-            except:
-                # traceback.print_exc()
-                print("craw failed")
-
-        self.outputer.output_html()
 
 if __name__ == '__main__':
-    # 入口 URL:百度百科的 Python 相关的百度词条
-    root_url = "https://baike.baidu.com/item/Python/407313"
+    with open("search.txt", 'r', encoding='utf-8') as fr:
+        # params = {"牙周炎", "种植体周围炎", "龋病", "牙髓病", "口腔溃疡", "扁平苔藓", "牙体缺损", "牙列缺损",
+        #           "牙列拥挤", "阻生齿", "口腔肿瘤", "颞下颌关节病", "儿童口腔疾病"}
+        params = fr.readlines()
+        params = [line.strip("\n") for line in params]
+        print(params)
+    root_url = "baike.baidu.com/item/{}"
     obj_spider = SpiderMain()
     # 启动爬虫
-    obj_spider.craw(root_url)
+    obj_spider.craw(root_url, params)
