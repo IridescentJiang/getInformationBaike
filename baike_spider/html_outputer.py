@@ -45,7 +45,7 @@ class HtmlOutputer(object):
     def output_excel(self):
         excel = xlsxwriter.Workbook('output.xlsx')
         excelsheet = excel.add_worksheet()
-        title = ['搜索疾病名称', '百度百科疾病名称', '所属科室', '多发人群', '主要病因', '主要症状']
+        title = ['搜索疾病名称', '百度百科疾病名称', '所属科室', '多发人群', '主要病因', '主要症状', '治疗方式', '预防措施']
         excelsheet.write_row(u'A1', title)
         for index, data in enumerate(self.datas):
             excelsheet.write_row(u'A'+str(index+2), data.values())
