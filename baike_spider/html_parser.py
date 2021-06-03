@@ -11,7 +11,17 @@ import re
 from urllib.parse import urlparse
 from urllib.parse import urljoin
 import urllib.parse
+from langconv import *
 
+
+def Traditional2Simplified(sentence):
+  '''
+  将sentence中的繁体字转为简体字
+  :param sentence: 待转换的句子
+  :return: 将句子中繁体字转换为简体字之后的句子
+  '''
+  sentence = Converter('zh-hans').convert(sentence)
+  return sentence
 
 class HtmlParser(object):
 
@@ -34,7 +44,7 @@ class HtmlParser(object):
 
         return new_urls
 
-    def _get_new_data(self, page_url, soup, res_data):
+    def _get_new_data_baike(self, page_url, soup, res_data):
         #res_data['summary'] = "未找到相关内容"
         res_data['title'] = "未找到相关内容"
         res_data['department'] = "未找到相关内容"
@@ -105,6 +115,44 @@ class HtmlParser(object):
                     prevention_title = prevention_title.next_element
         return res_data
 
+    def _get_new_data_wiki(self, page_url, soup, res_data):
+
+        #res_data['summary'] = "未找到相关内容"
+        res_data['search'] = Traditional2Simplified(res_data['search'])
+        res_data['reason'] = "未找到相关内容"
+        res_data['symptom'] = "未找到相关内容"
+        res_data['treat'] = "未找到相关内容"
+        res_data['prevention'] = "未找到相关内容"
+
+        # 病因 症状 治疗 和 预防 的内容，通过次级标题查找
+        sub_titles = soup.find_all('h2')
+        for sub_title in sub_titles:
+            search_dict = {"病因": "reason", "症状": "symptom", "预防": "prevention", "治疗": "treat"}
+            for key, value in search_dict.items():
+                sub_title_text = Traditional2Simplified(sub_title.get_text())
+                if re.search(key, sub_title_text):
+                    title = sub_title
+                    res_data[value] = ""
+                    while title:
+                        str_title = Traditional2Simplified(str(title))
+                        # 如果是元素并且是h2则退出
+                        if re.search("<h2", str_title) and not re.search(key, str_title):
+                            break
+                        # 如果切换标签p，则换行
+                        if re.search('<p>', str_title):
+                            res_data[value] += "\n"
+                        # 如果不是元素并且不是换行，则存入
+                        if not re.search("<", str_title) and str_title != "\n":
+                            # 去除次级标题中 编辑 的字样
+                            words = ["编辑", "[", "]", key]
+                            for word in words:
+                                if str_title.strip() == word:
+                                    str_title = ""
+                            res_data[value] += str_title
+                        title = title.next_element
+
+        return res_data
+
     def parse(self, page_url, html_content, data):
         if page_url is None or html_content is None:
             return
@@ -112,6 +160,7 @@ class HtmlParser(object):
         soup = BeautifulSoup(
             html_content, 'html.parser', from_encoding='utf-8')
 
-        new_data = self._get_new_data(page_url, soup, data)
+        new_data = self._get_new_data_baike(page_url, soup, data)
+        # new_data = self._get_new_data_wiki(page_url, soup, data)
 
         return new_data

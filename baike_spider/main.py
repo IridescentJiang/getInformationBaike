@@ -36,13 +36,12 @@ class SpiderMain(object):
 
 
 if __name__ == '__main__':
-    with open("search.txt", 'r', encoding='utf-8') as fr:
-        # params = {"牙周炎", "种植体周围炎", "龋病", "牙髓病", "口腔溃疡", "扁平苔藓", "牙体缺损", "牙列缺损",
-        #           "牙列拥挤", "阻生齿", "口腔肿瘤", "颞下颌关节病", "儿童口腔疾病"}
+    with open("search_wiki.txt", 'r', encoding='utf-8') as fr:
         params = fr.readlines()
         params = [line.strip("\n") for line in params]
         print(params)
     root_url = "baike.baidu.com/item/{}"
+    # root_url = "zh.wikipedia.org/wiki/{}"
     obj_spider = SpiderMain()
     # 启动爬虫
     obj_spider.craw(root_url, params)
